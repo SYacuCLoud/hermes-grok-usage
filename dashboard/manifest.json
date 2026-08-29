@@ -1,0 +1,8 @@
+{
+  "name": "grok-usage",
+  "label": "Grok Usage",
+  "description": "SuperGrok weekly usage for the desktop status bar",
+  "version": "0.1.0",
+  "tab": { "hidden": true },
+  "api": "plugin_api.py"
+}
