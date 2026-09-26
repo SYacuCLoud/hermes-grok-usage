@@ -164,23 +164,37 @@ _CORE_PROVIDERS = {"chatgpt": "openai-codex", "claude": "anthropic"}
 
 
 def fetch_core_usage(kind: str) -> dict[str, Any]:
+    from hermes_constants import get_hermes_home
+
     now = time.time()
-    hit = _core_cache.get(kind)
+    key = f"{get_hermes_home()}|{kind}"  # per profile: accounts differ
+    hit = _core_cache.get(key)
     if hit and now - hit[0] < _TTL:
         return hit[1]
     from agent.account_usage import fetch_account_usage
 
     out = snapshot_to_usage(fetch_account_usage(_CORE_PROVIDERS[kind]))
     if out.get("ok"):
-        _core_cache[kind] = (now, out)
+        _core_cache[key] = (now, out)
     return out
 
 
+def _profile_scope(profile: str | None):
+    # serve multiplexes profiles: unscoped get_secret() raises (ANTHROPIC_TOKEN -> "login missing").
+    try:
+        from hermes_cli.web_server_profiles import _config_profile_scope
+    except ImportError:  # standalone __main__ run
+        from contextlib import nullcontext
+        return nullcontext()
+    return _config_profile_scope(profile)
+
+
 @router.get("/usage")
-def usage(provider: str = "grok") -> dict[str, Any]:
-    if provider in _CORE_PROVIDERS:
-        return fetch_core_usage(provider)
-    return fetch_usage()
+def usage(provider: str = "grok", profile: str | None = None) -> dict[str, Any]:
+    with _profile_scope(profile):
+        if provider in _CORE_PROVIDERS:
+            return fetch_core_usage(provider)
+        return fetch_usage()
 
 
 if __name__ == "__main__":

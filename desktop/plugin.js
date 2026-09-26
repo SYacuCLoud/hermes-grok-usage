@@ -55,10 +55,11 @@ export default {
   register(ctx) {
     function Chip() {
       const kind = familyOf(useValue(host.state.model))
+      const profile = useValue(host.state.profile) || ''
       const fam = FAMILIES[kind]
       const q = useQuery({
-        queryKey: [ID, 'usage', kind],
-        queryFn: () => ctx.rest(`/usage?provider=${kind}`),
+        queryKey: [ID, 'usage', kind, profile],
+        queryFn: () => ctx.rest(`/usage?provider=${kind}&profile=${encodeURIComponent(profile)}`),
         refetchInterval: 120000,
         retry: 1,
       })
